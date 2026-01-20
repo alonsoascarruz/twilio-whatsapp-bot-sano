@@ -4,6 +4,35 @@ import twilio from "twilio";
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 
+// Configurable por variable de entorno (Render). Default: Lima
+const TZ = process.env.TIMEZONE || "America/Lima";
+
+// Horario: Lun–Vie 09:00–18:00
+// Nota: 18:00 es cierre. Consideramos abierto hasta 17:59.
+function isOpenNow(date = new Date()) {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(fmt.formatToParts(date).map(p => [p.type, p.value]));
+  const weekday = parts.weekday; // Mon, Tue, ...
+  const hour = parseInt(parts.hour, 10);
+  const minute = parseInt(parts.minute, 10);
+
+  const isMonToFri = ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(weekday);
+  if (!isMonToFri) return false; // Sáb/Dom cerrado
+
+  // Entre 09:00 y 17:59 abierto
+  if (hour < 9) return false;
+  if (hour > 17) return false;
+  // hour == 17 siempre ok, hour==18 ya cae en hour>17
+  return true;
+}
+
 const menu =
   `✅ Bot Visas & Viajes (MVP)\n\n` +
   `Escribe:\n` +
@@ -13,46 +42,58 @@ const menu =
   `4) Hablar con un asesor\n\n` +
   `Escribe "menu" para ver estas opciones otra vez.`;
 
+const closedMsg =
+  `🕘 Gracias por escribir.\n\n` +
+  `Nuestro horario es:\n` +
+  `Lun–Vie 9:00–18:00\n` +
+  `Sáb y Dom: cerrado\n\n` +
+  `Para ayudarte apenas abramos, envía en un solo mensaje:\n` +
+  `1) País destino\n` +
+  `2) Nacionalidad\n` +
+  `3) Fecha de viaje\n` +
+  `4) Tu nombre\n\n` +
+  `Ejemplo: "Destino: USA | Nacionalidad: Peruana | Viaje: 15/03 | Nombre: Ana"`;
+
 app.get("/", (req, res) => res.status(200).send("OK - WhatsApp bot running"));
 
 app.post("/whatsapp", (req, res) => {
-  const incomingMsg = (req.body.Body || "").trim().toLowerCase();
+  const incomingRaw = (req.body.Body || "").trim();
+  const incoming = incomingRaw.toLowerCase();
 
   let reply = "";
 
-  if (incomingMsg === "menu" || incomingMsg === "hola" || incomingMsg === "buenas") {
-    reply = menu;
-  } else if (incomingMsg === "1") {
-    reply =
-      `📌 Requisitos visa (MVP)\n\n` +
-      `Dime a qué país viajas y tu nacionalidad.\n` +
-      `Ejemplo: "Peruano → Estados Unidos"\n\n` +
-      `Escribe "menu" para volver.`;
-  } else if (incomingMsg === "2") {
-    reply =
-      `💰 Costos (MVP)\n\n` +
-      `Los costos dependen del país destino y tipo de visa.\n` +
-      `Dime: país + tipo (turismo/estudios/trabajo).\n\n` +
-      `Escribe "menu" para volver.`;
-  } else if (incomingMsg === "3") {
-    reply =
-      `⏱️ Tiempo de trámite (MVP)\n\n` +
-      `Varía por país y temporada.\n` +
-      `Dime el país destino y te indico el rango típico.\n\n` +
-      `Escribe "menu" para volver.`;
-  } else if (incomingMsg === "4") {
-    reply =
-      `👩‍💼 Hablar con un asesor\n\n` +
-      `Por favor envía:\n` +
-      `- País destino\n` +
-      `- Nacionalidad\n` +
-      `- Fecha aproximada de viaje\n` +
-      `Y un asesor te contactará.\n\n` +
-      `Escribe "menu" para volver.`;
+  // Si está cerrado, solo dejamos pasar "menu" (opcional) o pedimos datos
+  if (!isOpenNow() && incoming !== "menu") {
+    reply = closedMsg;
   } else {
-    reply =
-      `No entendí "${incomingMsg}".\n\n` +
-      `Escribe "menu" para ver las opciones.`;
+    if (incoming === "menu" || incoming === "hola" || incoming === "buenas") {
+      reply = menu;
+    } else if (incoming === "1") {
+      reply =
+        `📌 Requisitos visa\n\n` +
+        `Dime: nacionalidad + país destino.\n` +
+        `Ejemplo: "Peruana → Estados Unidos"\n\n` +
+        `Escribe "menu" para volver.`;
+    } else if (incoming === "2") {
+      reply =
+        `💰 Costos\n\n` +
+        `Dime: país destino + tipo de visa (turismo/estudios/trabajo).\n\n` +
+        `Escribe "menu" para volver.`;
+    } else if (incoming === "3") {
+      reply =
+        `⏱️ Tiempo de trámite\n\n` +
+        `Dime el país destino y te indico el rango típico.\n\n` +
+        `Escribe "menu" para volver.`;
+    } else if (incoming === "4") {
+      reply =
+        `👩‍💼 Hablar con un asesor\n\n` +
+        `Envíame:\n- País destino\n- Nacionalidad\n- Fecha de viaje\n- Nombre\n\n` +
+        `Escribe "menu" para volver.`;
+    } else {
+      reply =
+        `No entendí: "${incomingRaw}".\n\n` +
+        `Escribe "menu" para ver opciones.`;
+    }
   }
 
   const twiml = new twilio.twiml.MessagingResponse();
