@@ -36,8 +36,8 @@ function isOpenNow(date = new Date()) {
 const menu =
   `✅ Bot Visas & Viajes (MVP)\n\n` +
   `Escribe:\n` +
-  `1) Requisitos visa\n` +
-  `2) Costos\n` +
+  `1) Requisitos para ir a mi misión\n` +
+  `2) Problemas con un documento\n` +
   `3) Tiempo de trámite\n` +
   `4) Hablar con un asesor\n\n` +
   `Escribe "menu" para ver estas opciones otra vez.`;
@@ -48,11 +48,11 @@ const closedMsg =
   `Lun–Vie 9:00–18:00\n` +
   `Sáb y Dom: cerrado\n\n` +
   `Para ayudarte apenas abramos, envía en un solo mensaje:\n` +
-  `1) País destino\n` +
+  `1) Misión\n` +
   `2) Nacionalidad\n` +
-  `3) Fecha de viaje\n` +
+  `3) Fecha de inicio del CCM\n` +
   `4) Tu nombre\n\n` +
-  `Ejemplo: "Destino: USA | Nacionalidad: Peruana | Viaje: 15/03 | Nombre: Ana"`;
+  `Ejemplo: "Misión: La Paz el Alto  | Nacionalidad: Colombiana | Viaje: 15/03 | Nombre: Ana Motochachi"`;
 
 app.get("/", (req, res) => res.status(200).send("OK - WhatsApp bot running"));
 
@@ -70,24 +70,24 @@ app.post("/whatsapp", (req, res) => {
       reply = menu;
     } else if (incoming === "1") {
       reply =
-        `📌 Requisitos visa\n\n` +
-        `Dime: nacionalidad + país destino.\n` +
+        `📌 Requisitos para ir a mi misión\n\n` +
+        `Dime: nacionalidad + misión asignada.\n` +
         `Ejemplo: "Peruana → Estados Unidos"\n\n` +
         `Escribe "menu" para volver.`;
     } else if (incoming === "2") {
       reply =
-        `💰 Costos\n\n` +
-        `Dime: país destino + tipo de visa (turismo/estudios/trabajo).\n\n` +
+        `💰 Problemas con un documento\n\n` +
+        `Dime: misión asignada + documento(Ant. Penal/Parti. Nacimiento/Pasaporte).\n\n` +
         `Escribe "menu" para volver.`;
     } else if (incoming === "3") {
       reply =
         `⏱️ Tiempo de trámite\n\n` +
-        `Dime el país destino y te indico el rango típico.\n\n` +
+        `Dime el misión asignada y te indico el rango típico.\n\n` +
         `Escribe "menu" para volver.`;
     } else if (incoming === "4") {
       reply =
         `👩‍💼 Hablar con un asesor\n\n` +
-        `Envíame:\n- País destino\n- Nacionalidad\n- Fecha de viaje\n- Nombre\n\n` +
+        `Envíame:\n- misión asignada\n- Nacionalidad\n- Fecha de inicio del CCM\n- Nombre\n\n` +
         `Escribe "menu" para volver.`;
     } else {
       reply =
