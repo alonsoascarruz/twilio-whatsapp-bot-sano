@@ -77,6 +77,10 @@ function normalize(text) {
   return (text || "").trim().toLowerCase();
 }
 
+function hasAny(text, words) {
+  return words.some(w => text.includes(w));
+}
+
 // Condición por palabras clave (ejemplo)
 function hasKeyword(msg, keywords) {
   return keywords.some(k => msg.includes(k));
@@ -131,28 +135,31 @@ function handleMain(msg, from) {
 }
 
 function handleDocs(msg, from) {
-  // Sub-opciones dentro de Documentos
+  // Opciones por número (menú guiado)
   if (msg === "1") {
     return (
       `🛂 Pasaporte\n\n` +
       `Cuéntame:\n- País donde estás\n- Nacionalidad\n- ¿Está vencido o por vencer?\n- Fecha inicio CCM\n\n` +
-      `Escribe "menu" para volver al inicio o "2" para ver otros documentos.`
-    );
-  }
-  if (msg === "2") {
-    return (
-      `✅ Antecedentes penales\n\n` +
-      `Cuéntame:\n- País donde lo tramitas\n- Nacionalidad\n- ¿Lo necesitas apostillado?\n- Fecha inicio CCM\n\n` +
-      `Escribe "menu" para volver al inicio o "1/3/4" para otros documentos.`
-    );
-  }
-  if (msg === "3") {
-    return (
-      `📜 Partida de nacimiento\n\n` +
-      `Cuéntame:\n- País/ciudad donde está inscrito\n- Si necesitas legalización/apostilla\n- Fecha inicio CCM\n\n` +
       `Escribe "menu" para volver al inicio.`
     );
   }
+
+  if (msg === "2") {
+    return (
+      `✅ Antecedentes Penales\n\n` +
+      `Cuéntame:\n- País donde lo tramitas\n- Nacionalidad\n- ¿Lo necesitas apostillado?\n- Fecha inicio CCM\n\n` +
+      `Escribe "menu" para volver al inicio.`
+    );
+  }
+
+  if (msg === "3") {
+    return (
+      `📜 Partida de nacimiento\n\n` +
+      `Cuéntame:\n- País/ciudad donde está inscrito\n- ¿Necesitas legalización/apostilla?\n- Fecha inicio CCM\n\n` +
+      `Escribe "menu" para volver al inicio.`
+    );
+  }
+
   if (msg === "4") {
     return (
       `📝 Otro documento\n\n` +
@@ -161,8 +168,33 @@ function handleDocs(msg, from) {
     );
   }
 
-  return `En Documentos, responde 1–4. O escribe "menu" para volver.`;
+  // ✅ NUEVO: aceptar texto libre (como "Trujillo sur Ant Penal")
+  if (
+    hasAny(msg, [
+      "ant", "anteced", "antecedentes", "penal", "penales",
+      "pasaporte", "passport",
+      "partida", "nacimiento"
+    ])
+  ) {
+    return (
+      `✅ Gracias, recibí tu información.\n\n` +
+      `Resumen:\n"${msg}"\n\n` +
+      `Un asesor lo revisará y te responderá.\n\n` +
+      `Escribe "menu" para ver opciones.`
+    );
+  }
+
+  // Fallback más útil
+  return (
+    `Para ayudarte, dime:\n` +
+    `- Misión asignada\n` +
+    `- Documento (pasaporte / antecedentes / partida)\n\n` +
+    `Ejemplo: "Trujillo Sur - Antecedentes Penales"\n\n` +
+    `O responde 1–4 para elegir documento.\n` +
+    `Escribe "menu" para volver.`
+  );
 }
+
 
 // Puedes añadir más secciones así (REQ, TIME, HUMAN) con su propio handler
 function handleReq(msg, from) {
